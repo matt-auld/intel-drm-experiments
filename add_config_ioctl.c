@@ -9,6 +9,7 @@
 
 #include "i915_oa_drm.h"
 #include "i915_oa_hsw.h"
+#include "intel_chipset.h"
 
 #define ARRAY_SIZE(arr) (sizeof arr / sizeof arr[0])
 
@@ -18,22 +19,58 @@ static int open_render_node()
 	return open(name, O_RDWR);
 }
 
+static uint64_t
+read_file_uint64 (const char *file)
+{
+	char buf[32];
+	int fd, n;
+
+	fd = open(file, 0);
+	if (fd < 0)
+		return 0;
+
+	n = read(fd, buf, sizeof (buf) - 1);
+	close(fd);
+
+	if (n < 0)
+		return 0;
+
+	buf[n] = '\0';
+	return strtoull(buf, 0, 0);
+}
+
+static uint32_t read_device_id()
+{
+	const char *name = "/sys/class/drm/renderD128/device/device";
+
+	uint32_t value;
+
+	value = read_file_uint64(name);
+	free(name);
+
+	return value;
+}
+
+static int get_device_id()
+{
+
+}
+
 // TODO: we assume hsw here
-static int add_oa_configs(int drm_fd)
+static int add_oa_configs(int drm_fd, int dev_id)
 {
 	char *uuid = "oa-config-33";
 
-	struct drm_i915_perf_oa_config oa_config = {
-		.uuid = (uint64_t)uuid,
-		.n_mux_regs = sizeof(mux_config_3d) / 16,
-		.mux_regs = (uint64_t)mux_config_3d,
+	struct drm_i915_perf_oa_config oa_config;
 
-		.n_boolean_regs = sizeof(b_counter_config_3d) / 16,
-		.boolean_regs = (uint64_t)b_counter_config_3d,
-
-		.n_flex_regs = 0,
-		.flex_regs = 0,
-	};
+	if (IS_HASWELL(dev_id)) {
+		hsw_select_3d_config(&oa_config);
+	} else if (IS_BROADWELL(dev_id)) {
+		bdw_select_3d_config(&oa_config);
+	} else {
+		fprintf(stderr, "Error: platform not supported\n");
+		return -1;
+	}
 
 	int ret;
 	ret = ioctl(drm_fd, I915_IOCTL_PERF_ADD_CONFIG, &oa_config);
