@@ -81,7 +81,7 @@ static const uint64_t mux_config_memory_writes[] = {
 
 void hsw_select_memory_writes(struct drm_i915_perf_oa_config *oa_config)
 {
-	oa_config->n_mux_regs = sizeof(mux_config_memory_writes);
+	oa_config->n_mux_regs = sizeof(mux_config_memory_writes) / 16;
 	oa_config->mux_regs = (uint64_t)mux_config_memory_writes;
 
 	oa_config->n_boolean_regs = sizeof(b_counter_config_memory_writes) / 16;
