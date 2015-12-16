@@ -28,6 +28,8 @@
 #ifndef I915_OA_HSW_H
 #define I915_OA_HSW_H
 
-void hsw_select_3d_config(struct drm_i915_perf_oa_config *oa_config);
+struct drm_i915_perf_oa_config;
+
+void hsw_select_memory_writes(struct drm_i915_perf_oa_config *oa_config);
 
 #endif

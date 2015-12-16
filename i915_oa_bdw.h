@@ -27,6 +27,8 @@
 #ifndef I915_OA_BDW_H
 #define I915_OA_BDW_H
 
-void bdw_select_3d_config(struct drm_i915_perf_oa_config *oa_config);
+struct drm_i915_perf_oa_config;
+
+void bdw_select_memory_writes(struct drm_i915_perf_oa_config *oa_config);
 
 #endif

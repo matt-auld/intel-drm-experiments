@@ -6,9 +6,11 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "i915_oa_drm.h"
 #include "i915_oa_hsw.h"
+#include "i915_oa_bdw.h"
 #include "intel_chipset.h"
 
 #define ARRAY_SIZE(arr) (sizeof arr / sizeof arr[0])
@@ -42,45 +44,37 @@ read_file_uint64 (const char *file)
 static uint32_t read_device_id()
 {
 	const char *name = "/sys/class/drm/renderD128/device/device";
-
 	uint32_t value;
 
 	value = read_file_uint64(name);
-	free(name);
 
 	return value;
 }
 
-static int get_device_id()
+static int
+add_oa_configs(int drm_fd, struct drm_i915_perf_oa_config *oa_config)
 {
-
-}
-
-// TODO: we assume hsw here
-static int add_oa_configs(int drm_fd, int dev_id)
-{
-	char *uuid = "oa-config-33";
-
-	struct drm_i915_perf_oa_config oa_config;
+	int ret;
+	uint32_t dev_id = read_device_id();
+	const char *uuid = "oa-config-08";
 
 	if (IS_HASWELL(dev_id)) {
-		hsw_select_3d_config(&oa_config);
+		hsw_select_memory_writes(oa_config);
 	} else if (IS_BROADWELL(dev_id)) {
-		bdw_select_3d_config(&oa_config);
+		bdw_select_memory_writes(oa_config);
 	} else {
 		fprintf(stderr, "Error: platform not supported\n");
 		return -1;
 	}
 
-	int ret;
-	ret = ioctl(drm_fd, I915_IOCTL_PERF_ADD_CONFIG, &oa_config);
+	oa_config->uuid = (uint64_t)uuid;
 
-	if (ret) {
+	ret = ioctl(drm_fd, I915_IOCTL_PERF_ADD_CONFIG, oa_config);
+
+	if (ret)
 		fprintf(stderr, "Failed to add OA config %d\n", ret);
-		return 0;
-	}
 
-	return oa_config.id;
+	return ret;
 }
 
 static int open_oa_query(int drm_fd, int metric_set)
@@ -92,9 +86,11 @@ static int open_oa_query(int drm_fd, int metric_set)
 	uint64_t properties[] = {
 		DRM_I915_PERF_SAMPLE_OA_PROP, true,
 		DRM_I915_PERF_OA_METRICS_SET_PROP, metric_set,
-		DRM_I915_PERF_OA_FORMAT_PROP, I915_OA_FORMAT_A45_B8_C8,
+		DRM_I915_PERF_OA_FORMAT_PROP, I915_OA_FORMAT_A32u40_A4u32_B8_C8,
 		DRM_I915_PERF_OA_EXPONENT_PROP, period_exponent,
 	};
+
+	memset(&param, 0, sizeof(param));
 
 	param.flags = 0;
 	param.flags |= I915_PERF_FLAG_FD_CLOEXEC;
@@ -106,7 +102,7 @@ static int open_oa_query(int drm_fd, int metric_set)
 	ret = ioctl(drm_fd, I915_IOCTL_PERF_OPEN, &param);
 
 	if (ret)
-		fprintf(stderr, "Failed to open perf OA query\n");
+		fprintf(stderr, "Failed to open perf OA query %d\n", ret);
 
 	return ret;
 }
@@ -124,16 +120,27 @@ static int close_oa_query(int param_fd)
  */
 int main(void)
 {
+	struct drm_i915_perf_oa_config oa_config;
 	int drm_fd = open_render_node();
 	if (drm_fd == -1) {
 		fprintf(stderr, "Failed to open render node\n");
 		return 1;
 	}
 
-	int id = add_oa_configs(drm_fd);
-	open_oa_query(drm_fd, id);
+	if (add_oa_configs(drm_fd, &oa_config)) {
+		return 1;
+	}
+
+	printf("Added new OA config with id: %d\n", oa_config.id);
+
+	if (open_oa_query(drm_fd, oa_config.id)) {
+		return 2;
+	}
+
+	printf("Opened new OA query...\n");
 
 	close(drm_fd);
+
 
 	return 0;
 }
