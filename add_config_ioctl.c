@@ -56,7 +56,7 @@ add_oa_configs(int drm_fd, struct drm_i915_perf_oa_config *oa_config)
 {
 	int ret;
 	uint32_t dev_id = read_device_id();
-	const char *uuid = "oa-config-08";
+	const char *uuid = "oa-config-25";
 
 	if (IS_HASWELL(dev_id)) {
 		hsw_select_memory_writes(oa_config);

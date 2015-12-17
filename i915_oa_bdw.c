@@ -2,7 +2,7 @@
 #include "i915_oa_bdw.h"
 #include "i915_oa_drm.h"
 
-static const uint64_t b_counter_config_memory_writes[] = {
+static const uint32_t b_counter_config_memory_writes[] = {
 	0x2724, 0xf0800000,
 	0x2720, 0x00000000,
 	0x2714, 0xf0800000,
@@ -33,7 +33,7 @@ static const uint64_t b_counter_config_memory_writes[] = {
 	0x27ac, 0x0000fe00,
 };
 
-static const uint64_t flex_eu_config_memory_writes[] = {
+static const uint32_t flex_eu_config_memory_writes[] = {
 	0xE458, 0x00005004,
 	0xE558, 0x00015014,
 	0xE658, 0x00025024,
@@ -43,7 +43,7 @@ static const uint64_t flex_eu_config_memory_writes[] = {
 	0xE65c, 0x00065064,
 };
 
-static const uint64_t mux_config_memory_writes[] = {
+static const uint32_t mux_config_memory_writes[] = {
 	0x9888, 0x198B0343,
 	0x9888, 0x13845400,
 	0x9888, 0x3580001A,
@@ -95,12 +95,12 @@ static const uint64_t mux_config_memory_writes[] = {
 
 void bdw_select_memory_writes(struct drm_i915_perf_oa_config *oa_config)
 {
-	oa_config->n_mux_regs = sizeof(mux_config_memory_writes) / 16;
+	oa_config->n_mux_regs = sizeof(mux_config_memory_writes) / 8;
 	oa_config->mux_regs = (uint64_t)mux_config_memory_writes;
 
-	oa_config->n_boolean_regs = sizeof(b_counter_config_memory_writes) / 16;
+	oa_config->n_boolean_regs = sizeof(b_counter_config_memory_writes) / 8;
 	oa_config->boolean_regs = (uint64_t)b_counter_config_memory_writes;
 
-	oa_config->n_flex_regs = sizeof(flex_eu_config_memory_writes) / 16;
+	oa_config->n_flex_regs = sizeof(flex_eu_config_memory_writes) / 8;
 	oa_config->flex_regs = (uint64_t)flex_eu_config_memory_writes;
 }

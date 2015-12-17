@@ -27,7 +27,7 @@
 #include "i915_oa_drm.h"
 #include <stdint.h>
 
-static const uint64_t b_counter_config_memory_writes[] = {
+static const uint32_t b_counter_config_memory_writes[] = {
 	0x2724, 0xf0800000,
 	0x2720, 0x00000000,
 	0x2714, 0xf0800000,
@@ -58,7 +58,7 @@ static const uint64_t b_counter_config_memory_writes[] = {
 	0x27ac, 0x0000fc00,
 };
 
-static const uint64_t mux_config_memory_writes[] = {
+static const uint32_t mux_config_memory_writes[] = {
 	0x253A4, 0x34300000,
 	0x25440, 0x01500000,
 	0x25444, 0x00000120,
@@ -81,10 +81,10 @@ static const uint64_t mux_config_memory_writes[] = {
 
 void hsw_select_memory_writes(struct drm_i915_perf_oa_config *oa_config)
 {
-	oa_config->n_mux_regs = sizeof(mux_config_memory_writes) / 16;
+	oa_config->n_mux_regs = sizeof(mux_config_memory_writes) / 8;
 	oa_config->mux_regs = (uint64_t)mux_config_memory_writes;
 
-	oa_config->n_boolean_regs = sizeof(b_counter_config_memory_writes) / 16;
+	oa_config->n_boolean_regs = sizeof(b_counter_config_memory_writes) / 8;
 	oa_config->boolean_regs = (uint64_t)b_counter_config_memory_writes;
 
 	oa_config->n_flex_regs = 0;
