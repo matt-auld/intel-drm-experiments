@@ -56,7 +56,9 @@ add_oa_configs(int drm_fd, struct drm_i915_perf_oa_config *oa_config)
 {
 	int ret;
 	uint32_t dev_id = read_device_id();
-	const char *uuid = "oa-config-25";
+	const char *guid = "be374488-b4b6-40c7-90da-b77d7ad16189";
+
+	printf("guid: %s\n", guid);
 
 	if (IS_HASWELL(dev_id)) {
 		hsw_select_memory_writes(oa_config);
@@ -67,7 +69,7 @@ add_oa_configs(int drm_fd, struct drm_i915_perf_oa_config *oa_config)
 		return -1;
 	}
 
-	oa_config->uuid = (uint64_t)uuid;
+	oa_config->uuid = (uint64_t)guid;
 
 	ret = ioctl(drm_fd, I915_IOCTL_PERF_ADD_CONFIG, oa_config);
 
@@ -107,9 +109,15 @@ static int open_oa_query(int drm_fd, int metric_set)
 	return ret;
 }
 
-static int close_oa_query(int param_fd)
+static int read_perf_sample(int fd)
 {
-	close(param_fd);
+	static uint8_t buffer[1024];
+
+	int count = read(fd, buffer, 1024);
+	if (count < 0)
+		fprintf(stderr, "Failed to read sample\n");
+
+	return count;
 }
 
 /*
@@ -123,6 +131,7 @@ int main(void)
 	int metric_set;
 	struct drm_i915_perf_oa_config oa_config;
 	int drm_fd = open_render_node();
+
 	if (drm_fd == -1) {
 		fprintf(stderr, "Failed to open render node\n");
 		return 1;
@@ -135,6 +144,16 @@ int main(void)
 	}
 
 	printf("Added new OA config with id: %d\n", metric_set);
+
+	int oa_fd = open_oa_query(drm_fd, metric_set);
+	if (oa_fd > 0) {
+		printf("Opened OA query\n");
+		sleep(2);
+		if (read_perf_sample(oa_fd) > 0) {
+			printf("Read sample\n");
+		}
+		close(oa_fd);
+	}
 
 	close(drm_fd);
 
