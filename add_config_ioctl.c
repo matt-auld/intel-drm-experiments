@@ -101,7 +101,7 @@ static int open_oa_query(int drm_fd, int metric_set)
 
 	ret = ioctl(drm_fd, I915_IOCTL_PERF_OPEN, &param);
 
-	if (ret)
+	if (ret < 0)
 		fprintf(stderr, "Failed to open perf OA query %d\n", ret);
 
 	return ret;
@@ -120,6 +120,7 @@ static int close_oa_query(int param_fd)
  */
 int main(void)
 {
+	int metric_set;
 	struct drm_i915_perf_oa_config oa_config;
 	int drm_fd = open_render_node();
 	if (drm_fd == -1) {
@@ -127,20 +128,15 @@ int main(void)
 		return 1;
 	}
 
-	if (add_oa_configs(drm_fd, &oa_config)) {
+	metric_set = add_oa_configs(drm_fd, &oa_config);
+	if (metric_set < 0) {
+		fprintf(stderr, "Failed to add OA config\n");
 		return 1;
 	}
 
-	printf("Added new OA config with id: %d\n", oa_config.id);
-
-	if (open_oa_query(drm_fd, oa_config.id)) {
-		return 2;
-	}
-
-	printf("Opened new OA query...\n");
+	printf("Added new OA config with id: %d\n", metric_set);
 
 	close(drm_fd);
-
 
 	return 0;
 }

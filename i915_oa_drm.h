@@ -220,9 +220,6 @@ struct drm_i915_perf_oa_config {
 
 	uint32_t n_flex_regs;
 	uint64_t flex_regs;
-
-	/* OUT */
-	uint32_t id;
 };
 
 #ifndef EMSCRIPTEN
